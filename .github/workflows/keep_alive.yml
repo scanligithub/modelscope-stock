@@ -1,0 +1,9 @@
+name: Keep Alive
+on:
+  schedule:
+    - cron: '30 17 * * *' # 对应北京时间凌晨 01:30
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -I https://<你的创空间域名>.modelscope.space/
