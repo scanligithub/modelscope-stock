@@ -1,9 +1,13 @@
-name: Keep Alive
+name: ModelScope Keep Alive
 on:
   schedule:
-    - cron: '30 17 * * *' # 对应北京时间凌晨 01:30
+    - cron: '30 16 * * *' # 北京时间 00:30 (任务前 30 分钟)
+  workflow_dispatch:
+
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - run: curl -I https://<你的创空间域名>.modelscope.space/
+      - name: Ping Space
+        run: |
+          curl -I https://你的用户名-空间名.modelscope.space/ || echo "Ping OK"
