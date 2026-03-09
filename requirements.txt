@@ -1,0 +1,10 @@
+pandas
+numpy
+baostock
+requests
+pyarrow
+duckdb
+tqdm
+gradio
+apscheduler
+modelscope
