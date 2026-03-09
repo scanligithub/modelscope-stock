@@ -7,9 +7,13 @@ class MSManager:
         self.api.login(token)
         self.dataset_id = dataset_id
         
-    def upload_folder(self, local_path, path_in_repo):
-        self.api.upload_dataset_file(
-            dataset_id=self.dataset_id,
-            file_or_folder=local_path,
-            file_path=path_in_repo
-        )
+    def upload_file(self, local_path, path_in_repo):
+        print(f"🚀 Uploading {local_path} to ModelScope Dataset: {path_in_repo}...")
+        try:
+            self.api.upload_dataset_file(
+                dataset_name=self.dataset_id,
+                file_or_folder=local_path,
+                file_path=path_in_repo
+            )
+        except Exception as e:
+            print(f"❌ Upload Failed: {e}")
