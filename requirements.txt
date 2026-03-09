@@ -1,6 +1,10 @@
 pandas>=2.0.0
+numpy>=1.23.0
 baostock>=0.8.8
+requests>=2.31.0
+pyarrow>=14.0.0
 duckdb>=0.9.0
+tqdm>=4.66.0
 gradio>=4.0.0
 apscheduler>=3.10.0
 modelscope>=1.11.0
