@@ -1,3 +1,4 @@
+import sys
 import os
 import duckdb
 import glob
@@ -5,17 +6,33 @@ import datetime
 import shutil
 import pandas as pd
 import baostock as bs
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
+    
 from utils.ms_manager import MSManager
 from utils.qc import QualityControl
 
+# 屏蔽霸屏日志
+class HiddenPrints:
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
+
 def get_stock_list_with_names():
-    bs.login()
+    with HiddenPrints():
+        bs.login()
     d = datetime.datetime.now().strftime("%Y-%m-%d")
     rs = bs.query_all_stock(day=d)
     data = []
     if rs.error_code == '0':
         while rs.next(): data.append(rs.get_row_data())
-    bs.logout()
+    with HiddenPrints():
+        bs.logout()
     
     if data:
         df = pd.DataFrame(data, columns=["code", "tradeStatus", "code_name"])
@@ -27,7 +44,6 @@ def get_stock_list_with_names():
 def run_merge_and_push(year=0):
     qc = QualityControl()
     con = duckdb.connect()
-    # 限制DuckDB内存占用，避免 ModelScope 容器 OOM
     con.execute("SET memory_limit='3GB'")
     con.execute("SET temp_directory='duckdb_temp.tmp'")
     
@@ -103,5 +119,5 @@ def run_merge_and_push(year=0):
         for local, remote in targets.items(): 
             ms.upload_file(local, remote)
     
-    # 清理中间文件
+    # 清理中间文件释放空间
     shutil.rmtree("temp_parts", ignore_errors=True)
