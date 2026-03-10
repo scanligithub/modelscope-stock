@@ -1,7 +1,13 @@
+import sys
 import os
 import pandas as pd
 import concurrent.futures
 from tqdm import tqdm
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
+
 from utils.cf_proxy import EastMoneyProxy
 from utils.cleaner import DataCleaner
 
