@@ -10,8 +10,9 @@ class MSManager:
     def upload_file(self, local_path, path_in_repo):
         print(f"🚀 Uploading {local_path} to ModelScope Dataset: {path_in_repo}...")
         try:
+            # 【核心修复】：ModelScope SDK 参数名使用 dataset_id
             self.api.upload_dataset_file(
-                dataset_name=self.dataset_id,
+                dataset_id=self.dataset_id,
                 file_or_folder=local_path,
                 file_path=path_in_repo
             )
