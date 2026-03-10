@@ -16,5 +16,6 @@ class MSManager:
                 file_or_folder=local_path,
                 file_path=path_in_repo
             )
+            time.sleep(2)  # <--- 新增：每次上传完强行休息 2 秒防屏蔽
         except Exception as e:
             print(f"❌ Upload Failed: {e}")
