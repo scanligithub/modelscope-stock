@@ -1,14 +1,17 @@
 import os
 import requests
+from requests.adapters import HTTPAdapter
 from time import sleep
+import logging
 
 class EastMoneyProxy:
     def __init__(self):
         raw_url = os.getenv("CF_WORKER_URL", "").strip()
-        if raw_url and not raw_url.startswith("http"):
-            self.worker_url = f"https://{raw_url}"
+        if not raw_url:
+            logging.warning("⚠️ CF_WORKER_URL 未设置！")
+            self.worker_url = None
         else:
-            self.worker_url = raw_url
+            self.worker_url = f"https://{raw_url}" if not raw_url.startswith("http") else raw_url
             
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36",
@@ -16,17 +19,33 @@ class EastMoneyProxy:
         }
         self.session = requests.Session()
         self.session.headers.update(self.headers)
+        
+        # 【核心修复】：连接池与重试机制 (适配 ThreadPoolExecutor 高并发)
+        adapter = HTTPAdapter(pool_connections=50, pool_maxsize=50, max_retries=2)
+        self.session.mount('http://', adapter)
+        self.session.mount('https://', adapter)
 
-    def _request(self, target_func, params, retries=3):
-        if not self.worker_url: return None
+    def _request(self, target_func, params, retries=4):
+        if not self.worker_url:
+            return None
+            
         payload = params.copy()
         payload["target_func"] = target_func
-        for _ in range(retries):
+        
+        for attempt in range(retries):
             try:
-                resp = self.session.get(self.worker_url, params=payload, timeout=30)
-                if resp.status_code == 200: return resp.json()
-                sleep(1)
-            except: sleep(1)
+                resp = self.session.get(self.worker_url, params=payload, timeout=20)
+                if resp.status_code == 200: 
+                    return resp.json()
+                elif resp.status_code == 500:
+                    logging.warning(f"CF Proxy Error (500) on attempt {attempt+1}")
+                sleep(1.5)
+            except requests.exceptions.Timeout:
+                logging.warning(f"CF Proxy Timeout on attempt {attempt+1}")
+                sleep(2)
+            except Exception as e:
+                logging.error(f"CF Proxy Request Failed: {e}")
+                sleep(2)
         return None
 
     def get_sector_list(self, fs_code):
