@@ -1,6 +1,7 @@
 import os
 import gradio as gr
 import logging
+from pytz import timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from scripts.fetch_worker import run_stock_pipeline
 from scripts.fetch_sector import run_sector_pipeline
@@ -28,7 +29,7 @@ def full_workflow(year=0):
         return f"FAILED: {str(e)}"
 
 # 定时任务：每天凌晨 1:00 执行当年数据更新 (YTD)
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(timezone=timezone('Asia/Shanghai'))
 scheduler.add_job(full_workflow, 'cron', hour=1, minute=0, args=[0])
 scheduler.start()
 
