@@ -55,7 +55,8 @@ def ui_workflow(year=0):
     try:
         # 步骤 1
         log_stream += "\n⏳ [1/3] 正在获取 A 股全量 K 线与资金流数据...\n"
-        log_stream += "   (此过程需访问 Baostock 和新浪接口，约需 5-15 分钟，请勿关闭页面)\n"
+        log_stream += "   (此过程需访问 Baostock 和新浪接口，约需 5-15 分钟)\n"
+        log_stream += "   💡 详细进度请实时查看魔塔空间的【日志】面板。\n"
         yield log_stream
         run_stock_pipeline(year=year)
         
@@ -83,7 +84,6 @@ def ui_workflow(year=0):
 # =======================================================
 # 4. 初始化定时调度器 (北京时间)
 # =======================================================
-# 指定北京时区，确保在 UTC 容器内定时准确
 beijing_tz = timezone('Asia/Shanghai')
 scheduler = BackgroundScheduler(timezone=beijing_tz)
 
@@ -103,7 +103,6 @@ with gr.Blocks() as demo:
     )
     
     with gr.Row():
-        # 使用 variant 参数区分按钮重要性
         btn_daily = gr.Button("▶️ 运行每日更新 (YTD)", variant="primary")
         btn_full = gr.Button("⚠️ 运行全量历史下载", variant="secondary")
         
@@ -113,9 +112,7 @@ with gr.Blocks() as demo:
         placeholder="等待指令中... 点击按钮后此处将流式播报进度。"
     )
     
-    # 核心修复点：
-    # 1. 使用 functools.partial 预绑定参数，确保 Gradio 识别其为 Generator
-    # 2. 绑定点击事件
+    # 绑定点击事件
     btn_daily.click(
         fn=functools.partial(ui_workflow, year=0), 
         inputs=None, 
@@ -135,10 +132,8 @@ if __name__ == "__main__":
     
     # 启动应用
     # 开启 queue() 以支持 yield 流式输出
-    # 修复 theme 警告：将 theme 移至 launch 中
     demo.queue().launch(
         server_name="0.0.0.0", 
         server_port=7860, 
-        theme=gr.themes.Soft(),
-        show_api=False
+        theme=gr.themes.Soft()
     )
