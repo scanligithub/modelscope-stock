@@ -35,18 +35,30 @@ def get_default_params(fs_value):
     }
 
 async def fetch_with_retry(session, page_num, board_name, fs_value, max_retries=5):
-    """带节点轮询和指数退避的强健抓取函数"""
+    """带节点轮询、协议降级(HTTP)和指数退避的强健抓取函数"""
     params = get_default_params(fs_value)
     params["pn"] = str(page_num)
-    headers = {"Referer": "https://quote.eastmoney.com/"}
+    
+    # 注入极其逼真的旧版/普通浏览器全套 Header
+    headers = {
+        "Accept": "*/*",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        "Connection": "keep-alive",
+        "Referer": "http://quote.eastmoney.com/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
 
     for attempt in range(max_retries):
         async with SEMAPHORE:
             node = random.choice(EASTMONEY_NODES)
-            url = f"https://{node}/api/qt/clist/get"
+            # 【核心修改】：使用 http:// 绕过 TLS 握手层风控！
+            url = f"http://{node}/api/qt/clist/get"
             
             try:
-                await asyncio.sleep(random.uniform(0.1, 0.6))
+                # 稍微增加一点延迟，规避并发检测
+                await asyncio.sleep(random.uniform(0.3, 1.0))
+                
+                # impersonate 依然保留，用于底层的 HTTP/2 帧控制
                 resp = await session.get(url, params=params, headers=headers, timeout=10)
                 
                 if resp.status_code == 200:
@@ -55,10 +67,13 @@ async def fetch_with_retry(session, page_num, board_name, fs_value, max_retries=
                     if data_dict:
                         return {"type": board_name, "data": data_dict}
                     return None
+                else:
+                    print(f"[-] HTTP 状态码异常: {resp.status_code}")
                 
             except Exception as e:
                 wait_time = (attempt + 1) * 2
-                print(f"[!] {board_name} 第 {page_num} 页 (节点 {node}) 抓取失败，等待 {wait_time}s 重试...")
+                # 【核心修改】：打印 repr(e) 暴露出底层的真实报错原因 (Timeout? Reset? DNS?)
+                print(f"[!] {board_name} 第 {page_num} 页 (节点 {node}) 抓取失败: {repr(e)}。等待 {wait_time}s 重试...")
                 await asyncio.sleep(wait_time)
                 
     return None
