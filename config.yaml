@@ -1,0 +1,42 @@
+# ModelScope 创空间配置文件
+# 用于定义创空间的元数据和运行配置
+
+sdk: gradio
+sdk_version: 4.44.0
+python_version: 3.10
+
+# 创空间基本信息
+title: "股票量化数据采集系统"
+description: "A 股全量历史与实时行情采集系统，支持自动入库到 ModelScope Dataset"
+icon: "📈"
+
+# 硬件配置
+hardware: "CPU"
+
+# 环境变量配置
+env:
+  - name: CF_WORKER_URL
+    description: "Cloudflare Worker 代理地址"
+    required: false
+  - name: MS_TOKEN
+    description: "ModelScope Access Token"
+    required: true
+  - name: MS_DATASET_ID
+    description: "目标数据集仓库 ID (如 scanli/ashare-data)"
+    required: true
+
+# 入口文件
+entrypoint: "app.py"
+
+# 依赖文件
+files:
+  - "requirements.txt"
+  - "app.py"
+  - "scripts/"
+
+# 标签
+tags:
+  - "stock"
+  - "quant"
+  - "data-pipeline"
+  - "gradio"
