@@ -9,4 +9,6 @@ gradio>=4.0.0
 apscheduler>=3.10.0
 modelscope>=1.11.0
 pytz>=2023.3
+curl_cffi>=0.5.10
+polars>=0.20.0
 
